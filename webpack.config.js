@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const path = require("path");
-const webpack = require("webpack");
 
 const config = {
     entry: "./src/index.ts",
@@ -32,12 +31,7 @@ const config = {
         }
         ]
     },
-    plugins: [
-        new webpack.BannerPlugin({
-            banner: "/* eslint-disable */",
-            raw: true
-        })
-    ]
+    plugins: []
 };
 module.exports = (env, argv) => {
     if (argv.mode === "development") {

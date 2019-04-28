@@ -19,10 +19,13 @@
     },
     "rules": {
         "comma-dangle": ["error", "never"],
+        "import/newline-after-import": "warn",
         "import/no-extraneous-dependencies": "off",
         "no-plusplus": "off",
+        "no-trailing-spaces": "warn",
         "prefer-template":"off",
         "quotes": ["error", "double", { "avoidEscape": true }],
+        "semi": "warn",
         "@typescript-eslint/no-explicit-any": "off",
         "@typescript-eslint/prefer-interface": "off",
         "@typescript-eslint/explicit-function-return-type": "off"
