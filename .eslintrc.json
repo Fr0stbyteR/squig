@@ -18,9 +18,12 @@
         "useJSXTextNode": true
     },
     "rules": {
+        "arrow-parens": "warn",
         "comma-dangle": ["error", "never"],
+        "curly": ["warn", "multi-line"],
         "import/newline-after-import": "warn",
         "import/no-extraneous-dependencies": "off",
+        "no-empty": "warn",
         "no-plusplus": "off",
         "no-trailing-spaces": "warn",
         "prefer-template":"off",
