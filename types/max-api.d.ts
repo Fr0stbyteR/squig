@@ -50,7 +50,7 @@ declare module "max-api" {
     }
 
     type Anything = any;
-    type Dict = object;
+    type Dict = { [key: string]: any };
     type DictIdentifier = string;
     type DictPath = string;
     type MessageHandler<K extends keyof MaxEventMap> = (...args: MaxEventMap[K]) => any;
