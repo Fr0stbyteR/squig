@@ -19,6 +19,12 @@ document.addEventListener("DOMContentLoaded", () => {
     squig.socket = SocketIO("192.168.1.10:1080");
     squig.socket.on("connect", () => {
         squig.socket.emit("connect-client");
+        squig.socket.on("new-line", (e: { id: number; line: TLine }) => {
+            squig.lines[e.id] = e.line;
+        });
+        squig.socket.on("lines", (e: TLines) => {
+            squig.lines = e;
+        });
     });
 
     const drawLine = (ctx: CanvasRenderingContext2D, line: TLine) => {
