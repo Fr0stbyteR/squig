@@ -17,8 +17,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Socket init
     squig.socket = SocketIO("192.168.1.10:1080");
-    squig.socket.on("connection", (socket: SocketIOClient.Socket) => {
-        socket.send("connect-client");
+    squig.socket.on("connect", () => {
+        squig.socket.emit("connect-client");
     });
 
     const drawLine = (ctx: CanvasRenderingContext2D, line: TLine) => {
@@ -67,7 +67,9 @@ document.addEventListener("DOMContentLoaded", () => {
         squig.tempLine.points.push({ x: x / rect.width * w, y: y / rect.height * h });
     };
     const handleEnd = () => {
-        squig.lines[new Date().getTime()] = squig.tempLine;
+        const id = new Date().getTime();
+        squig.lines[id] = squig.tempLine;
+        if (!squig.socket.disconnected) squig.socket.emit("new-line", { id, line: squig.tempLine });
         squig.tempLine = { color: squig.tempLine.color, points: [] };
         const canvas = squig.canvas;
         canvas.removeEventListener("mousemove", handleMove);

@@ -1,6 +1,7 @@
 "use strict";
-exports.__esModule = true;
 /* eslint-disable no-console */
+/// <reference types="../types" />
+exports.__esModule = true;
 var path = require("path");
 var SocketIO = require("socket.io");
 var express = require("express");
@@ -22,5 +23,8 @@ io.on("connection", function (socket) {
     });
     socket.on("disconnect", function () {
         console.log("Disconnected: " + socket.id);
+    });
+    socket.on("new-line", function (e) {
+        console.log(e.line);
     });
 });

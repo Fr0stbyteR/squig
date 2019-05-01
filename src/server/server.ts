@@ -1,4 +1,6 @@
 /* eslint-disable no-console */
+/// <reference types="../types" />
+
 import * as path from "path";
 import * as SocketIO from "socket.io";
 import * as express from "express";
@@ -24,5 +26,8 @@ io.on("connection", (socket) => {
     });
     socket.on("disconnect", () => {
         console.log("Disconnected: " + socket.id);
+    });
+    socket.on("new-line", (e: { id: number; line: TLine }) => {
+        console.log(e.line);
     });
 });
