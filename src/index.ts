@@ -3,8 +3,8 @@ import * as SocketIO from "socket.io-client";
 document.addEventListener("DOMContentLoaded", () => {
     // Data init
     const squig: Squig = {};
-    const w = 1280;
-    const h = 720;
+    const w = 720;
+    const h = 1280;
     squig.canvas = document.getElementById("main-canvas") as HTMLCanvasElement;
     const colorSelects = document.getElementsByClassName("color-select") as HTMLCollectionOf<HTMLDivElement>;
     squig.lines = {};
@@ -67,6 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const handleMove = (e: MouseEvent | TouchEvent) => {
+        e.preventDefault();
         const rect = squig.canvas.getBoundingClientRect();
         const x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
         const y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
@@ -84,6 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
         canvas.removeEventListener("touchend", handleEnd);
     };
     const handleStart = (e: MouseEvent | TouchEvent) => {
+        e.preventDefault();
         const canvas = squig.canvas;
         const rect = canvas.getBoundingClientRect();
         const x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
