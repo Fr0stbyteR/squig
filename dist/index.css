@@ -15,6 +15,34 @@ body {
 #main-canvas {
     position: absolute;
     display: block;
-    width: 100%;
-    height: 100%;
+    width: calc(100% - 10px);
+    height: calc(100% - 10px);
+    border: #00145f 5px dashed;
+}
+#controller {
+    position: fixed;
+    display: flex;
+    flex-direction: row;
+    z-index: 1;
+    bottom: 0px;
+    border-radius: 0px 10px 0px 0px;
+    width: auto;
+    height: 60px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: #606060 2px solid;
+    box-shadow: 0px 0px 5px black;
+}
+#controller .color-select {
+    width: 40px;
+    height: 40px;
+    margin: 10px;
+}
+.color-select-red {
+    background-color: rgb(100, 0, 0);
+}
+.color-select-blue {
+    background-color: rgb(0, 170, 170);
+}
+.color-select-yellow {
+    background-color: rgb(255, 255, 100);
 }
