@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.squig = squig;
 
     // Socket init
-    squig.socket = SocketIO("192.168.1.10:1080");
+    squig.socket = SocketIO("http://192.168.1.10:1080");
     squig.socket.on("connect", () => {
         squig.socket.emit("connect-client");
         squig.socket.on("new-line", (e: { id: number; line: TLine }) => {

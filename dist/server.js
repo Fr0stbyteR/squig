@@ -14,6 +14,7 @@ var admins = {};
 var lines = {};
 server.use("/", express.static(path.join(__dirname, "/")));
 server.listen(PORT, function () { return console.log("Server is running on http://localhost:" + PORT); });
+io.origins("*:*");
 io.on("connection", function (socket) {
     console.log(socket.id);
     socket.on("connect-client", function () {
