@@ -8,17 +8,24 @@ document.addEventListener("DOMContentLoaded", () => {
     squig.canvas = document.getElementById("main-canvas") as HTMLCanvasElement;
     const colorSelects = document.getElementsByClassName("color-select") as HTMLCollectionOf<HTMLDivElement>;
     squig.lines = {};
-    squig.tempLine = { color: "black", points: [] };
+    squig.tempLine = { color: "rgb(100, 0, 0)", points: [] };
     squig.canvas.width = w;
     squig.canvas.height = h;
     squig.ctx = squig.canvas.getContext("2d");
     squig.raf = 0;
     window.squig = squig;
 
+    // Socket init
+    squig.socket = SocketIO("192.168.1.10:1080");
+    squig.socket.on("connection", (socket: SocketIOClient.Socket) => {
+        socket.send("connect-client");
+    });
+
     const drawLine = (ctx: CanvasRenderingContext2D, line: TLine) => {
         if (!line.points.length) return;
         ctx.save();
         ctx.strokeStyle = line.color;
+        ctx.lineWidth = 2;
         ctx.beginPath();
         const firstPoint = line.points[0];
         ctx.moveTo(firstPoint.x, firstPoint.y);
@@ -52,7 +59,6 @@ document.addEventListener("DOMContentLoaded", () => {
         e.addEventListener("click", handleClickColor);
         e.addEventListener("touchstart", handleClickColor);
     }
-    colorSelects[0].click();
 
     const handleMove = (e: MouseEvent | TouchEvent) => {
         const rect = squig.canvas.getBoundingClientRect();

@@ -2,6 +2,7 @@ declare interface Window {
     squig: Squig;
 }
 declare interface Squig {
+    socket?: SocketIOClient.Socket;
     canvas?: HTMLCanvasElement;
     ctx?: CanvasRenderingContext2D;
     lines?: TLines;
