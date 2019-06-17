@@ -14,7 +14,6 @@ var admins = {};
 var lines = {};
 server.use("/", express.static(path.join(__dirname, "/")));
 server.listen(PORT, function () { return console.log("Server is running on http://localhost:" + PORT); });
-io.origins("*:*");
 io.on("connection", function (socket) {
     console.log(socket.id);
     socket.on("connect-client", function () {
@@ -39,6 +38,21 @@ io.on("connection", function (socket) {
         }
         for (var id in admins) {
             admins[id].emit("new-line", e);
+        }
+        console.log("New line: " + e.id);
+    });
+    socket.on("delete-line", function (e) {
+        if (!(socket.id in admins))
+            return;
+        if (e.id)
+            delete lines[e.id];
+        if (e.ids)
+            e.ids.forEach(function (id) { return delete lines[id]; });
+        for (var id in clients) {
+            clients[id].emit("delete-line", e);
+        }
+        for (var id in admins) {
+            admins[id].emit("delete-line", e);
         }
         console.log("New line: " + e.id);
     });

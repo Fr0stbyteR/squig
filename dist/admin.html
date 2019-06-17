@@ -8,13 +8,43 @@
     <meta name="mobile-web-app-capable" content="yes">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Squig</title>
-	<script src="index.js"></script>
+	<script src="admin.js"></script>
 	<link rel="stylesheet" type="text/css" href="index.css">
+	<link rel="stylesheet" type="text/css" href="admin.css">
 	<link rel="manifest" href="manifest.json">
 </head>
 <body>
 	<div id="root">
 		<canvas id="main-canvas"></canvas>
+		<div id="admin">
+			<div id="admin-time">
+				<table id="table-time">
+					<thead>
+						<tr>
+							<td>User</td>
+							<td>Color</td>
+							<td>Time</td>
+							<td>Del</td>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+			</div>
+			<div id="admin-user">
+				<table id="table-user">
+					<thead>
+						<tr>
+							<td>User</td>
+							<td>Last Time</td>
+							<td>Del</td>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+			</div>
+		</div>
 		<div id="controller">
 			<div class="color-select color-select-red"></div>
 			<div class="color-select color-select-blue"></div>

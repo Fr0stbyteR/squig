@@ -1,0 +1,45 @@
+#admin {
+    display: flex;
+    flex: 1 0 auto;
+    flex-direction: column;
+    min-width: 200px;
+    font-size: 14px;
+}
+#admin-time {
+    display: block;
+    position: relative;
+    max-height: 75%;
+    overflow: auto;
+    flex: 5 1 auto;
+}
+#admin-user {
+    display: block;
+    position: relative;
+    max-height: 25%;
+    overflow: auto;
+    flex: 1 1 auto;
+}
+#table-time {
+    width: 100%;
+}
+#table-user {
+    width: 100%;
+}
+#admin table {
+    width: 100%;
+}
+#admin td {
+    border: #eee 1px solid;
+}
+#admin-time td:nth-child(2) {
+    width: 60px;
+}
+#admin td:last-child {
+    width: 60px;
+}
+#admin .btn-delete {
+    background-color: #ff8080;
+}
+#admin .btn-delete::after {
+    content: "Delete"
+}
