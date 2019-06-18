@@ -156,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(fillTable, 60000);
 
     // Socket init
-    squig.socket = SocketIO("http://192.168.1.10:1080");
+    squig.socket = SocketIO(window.location.hostname + ":2112");
     squig.socket.on("connect", () => {
         squig.tempLine.user = squig.socket.id;
         squig.socket.emit("connect-admin");

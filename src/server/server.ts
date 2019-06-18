@@ -7,9 +7,9 @@ import * as express from "express";
 
 console.log("It works");
 
-const PORT = 2112;
+const PORT = 1080;
 const server = express();
-const io = SocketIO(1080);
+const io = SocketIO(2112);
 const clients: { [id: string]: SocketIO.Socket } = {};
 const admins: { [id: string]: SocketIO.Socket } = {};
 const lines: TLines = {};

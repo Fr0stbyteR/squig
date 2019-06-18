@@ -6,9 +6,9 @@ var path = require("path");
 var SocketIO = require("socket.io");
 var express = require("express");
 console.log("It works");
-var PORT = 2112;
+var PORT = 1080;
 var server = express();
-var io = SocketIO(1080);
+var io = SocketIO(2112);
 var clients = {};
 var admins = {};
 var lines = {};
@@ -54,6 +54,6 @@ io.on("connection", function (socket) {
         for (var id in admins) {
             admins[id].emit("delete-line", e);
         }
-        console.log("New line: " + e.id);
+        console.log("Delete line: " + e.id || (e.ids.length + "lines"));
     });
 });
