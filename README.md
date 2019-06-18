@@ -7,7 +7,7 @@ The project is an interactive local-network canvas. There are three parts (role)
 
 To run the project, you need to start the server firstly. Make sure you have [NodeJS](https://nodejs.org/) installed.
 
-Run the `run_server.command` file in `dist` Directory, or execute
+Open Terminal, use `cd` command to switch path to project folder, then execute
 ```
 node ./dist/server.js
 ```
