@@ -9,6 +9,7 @@ To run the project, you need to start the server firstly. Make sure you have [No
 
 Open Terminal, use `cd` command to switch path to project folder, then execute
 ```
+npm install
 node ./dist/server.js
 ```
 Now a web page server is running and listening to port 1080,
