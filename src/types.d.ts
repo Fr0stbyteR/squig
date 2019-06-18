@@ -12,6 +12,7 @@ declare interface Squig {
 declare interface SquigAdmin {
     tableTime?: HTMLTableElement;
     tableUser?: HTMLTableElement;
+    selected?: string[];
 }
 
 type TPoint = { x: number; y: number };

@@ -31,6 +31,12 @@
 #admin td {
     border: #eee 1px solid;
 }
+#admin tbody tr:focus {
+    background-color: #eee;
+}
+#admin tbody tr:hover {
+    background-color: #eee;
+}
 #admin-time td:nth-child(2) {
     width: 60px;
 }
@@ -41,5 +47,6 @@
     background-color: #ff8080;
 }
 #admin .btn-delete::after {
-    content: "Delete"
+    content: "Delete";
+    color: white;
 }

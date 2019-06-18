@@ -17,12 +17,29 @@ document.addEventListener("DOMContentLoaded", () => {
     const squigAdmin: SquigAdmin = {};
     squigAdmin.tableTime = document.getElementById("table-time") as HTMLTableElement;
     squigAdmin.tableUser = document.getElementById("table-user") as HTMLTableElement;
+    squigAdmin.selected = [];
 
     const drawLine = (ctx: CanvasRenderingContext2D, line: TLine) => {
         if (!line.points.length) return;
         ctx.save();
         ctx.strokeStyle = line.color;
         ctx.lineWidth = 2;
+        ctx.beginPath();
+        const firstPoint = line.points[0];
+        ctx.moveTo(firstPoint.x, firstPoint.y);
+        for (let i = 1; i < line.points.length; i++) {
+            const point = line.points[i];
+            ctx.lineTo(point.x, point.y);
+        }
+        ctx.stroke();
+        ctx.restore();
+    };
+    const drawSelectedLine = (ctx: CanvasRenderingContext2D, line: TLine) => {
+        if (!line.points.length) return;
+        ctx.save();
+        ctx.strokeStyle = "rgba(255, 255, 100, 0.5)";
+        ctx.lineWidth = 25;
+        ctx.lineCap = "round";
         ctx.beginPath();
         const firstPoint = line.points[0];
         ctx.moveTo(firstPoint.x, firstPoint.y);
@@ -40,6 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ctx.fillRect(0, 0, w, h);
         for (const id in lines) {
             const line = lines[id];
+            if (squigAdmin.selected.indexOf(id) !== -1) drawSelectedLine(ctx, line);
             drawLine(ctx, line);
         }
         drawLine(ctx, squig.tempLine);
@@ -52,8 +70,36 @@ document.addEventListener("DOMContentLoaded", () => {
         const tableUserBody = squigAdmin.tableUser.getElementsByTagName("tbody")[0];
         tableUserBody.innerHTML = "";
         const users: { [id: string]: { last: number; lines: string[] } } = {};
-        for (const id in squig.lines) {
-            const line = squig.lines[id];
+        const handleSelect = (id: string) => {
+            if (squigAdmin.selected.indexOf(id) === -1) {
+                squigAdmin.selected.push(id);
+                draw();
+            }
+        };
+        const handleDeselect = (id: string) => {
+            const i = squigAdmin.selected.indexOf(id);
+            if (i !== -1) {
+                squigAdmin.selected.splice(i, 1);
+                draw();
+            }
+        };
+        const handleSelects = (ids: string[]) => {
+            ids.forEach((id) => {
+                if (squigAdmin.selected.indexOf(id) === -1) squigAdmin.selected.push(id);
+            });
+            draw();
+        };
+        const handleDeselects = (ids: string[]) => {
+            ids.forEach((id) => {
+                const i = squigAdmin.selected.indexOf(id);
+                if (i !== -1) squigAdmin.selected.splice(i, 1);
+            });
+            draw();
+        };
+        const ids = Object.keys(squig.lines).sort((a, b) => +b - +a);
+        for (let i = 0; i < ids.length; i++) {
+            const id = ids[i];
+            const line = squig.lines[+id];
             const time = new Date(+id);
             const dMin = (curTime.getTime() - time.getTime()) / 60000;
             const color = line.color;
@@ -76,10 +122,17 @@ document.addEventListener("DOMContentLoaded", () => {
             tr.appendChild(tdColor);
             tr.appendChild(tdTime);
             tr.appendChild(btnDel);
+            tr.tabIndex = 1;
             tableTimeBody.appendChild(tr);
             btnDel.addEventListener("click", () => squig.socket.emit("delete-line", { id }));
+            tr.addEventListener("focusin", () => handleSelect(id));
+            tr.addEventListener("focusout", () => handleDeselect(id));
+            tr.addEventListener("mouseenter", () => handleSelect(id));
+            tr.addEventListener("mouseleave", () => handleDeselect(id));
         }
-        for (const id in users) {
+        const usersIDs = Object.keys(users).sort((a, b) => +users[a].last - +users[b].last);
+        for (let i = 0; i < usersIDs.length; i++) {
+            const id = usersIDs[i];
             const tr = document.createElement("tr");
             const tdUser = document.createElement("td");
             const tdTime = document.createElement("td");
@@ -94,6 +147,10 @@ document.addEventListener("DOMContentLoaded", () => {
             tr.appendChild(btnDel);
             tableUserBody.appendChild(tr);
             btnDel.addEventListener("click", () => squig.socket.emit("delete-line", { ids: users[id].lines }));
+            tr.addEventListener("focusin", () => handleSelects(users[id].lines));
+            tr.addEventListener("focusout", () => handleDeselects(users[id].lines));
+            tr.addEventListener("mouseenter", () => handleSelects(users[id].lines));
+            tr.addEventListener("mouseleave", () => handleDeselects(users[id].lines));
         }
     };
     setInterval(fillTable, 60000);
