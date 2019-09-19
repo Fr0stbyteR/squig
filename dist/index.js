@@ -414,7 +414,8 @@ function toByteArray (b64) {
     ? validLen - 4
     : validLen
 
-  for (var i = 0; i < len; i += 4) {
+  var i
+  for (i = 0; i < len; i += 4) {
     tmp =
       (revLookup[b64.charCodeAt(i)] << 18) |
       (revLookup[b64.charCodeAt(i + 1)] << 12) |
@@ -10372,8 +10373,7 @@ class Squig {
         lines = this.lines,
         w = this.w,
         h = this.h;
-    ctx.fillStyle = "transparent";
-    ctx.fillRect(0, 0, w, h);
+    ctx.clearRect(0, 0, w, h);
 
     for (var id in lines) {
       var line = lines[id];
