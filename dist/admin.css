@@ -8,16 +8,37 @@
 #admin-time {
     display: block;
     position: relative;
-    max-height: 75%;
+    max-height: 60%;
     overflow: auto;
     flex: 5 1 auto;
 }
 #admin-user {
     display: block;
     position: relative;
-    max-height: 25%;
+    max-height: 20%;
     overflow: auto;
     flex: 1 1 auto;
+}
+#admin-img {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    max-height: 20%;
+    overflow: auto;
+    flex: 1 1 auto;
+}
+#admin-img #options-img {
+    display: block;
+    position: relative;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    width: 100%;
+    height: 100%;
+}
+#admin-img .option-img {
+    position: relative;
+    display: inline-block;
+    height: 100%;
 }
 #table-time {
     width: 100%;

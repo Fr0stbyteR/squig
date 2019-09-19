@@ -35,7 +35,7 @@ const config = {
 };
 module.exports = (env, argv) => {
     if (argv.mode === "development") {
-        config.devtool = "inline-source-map";
+        config.devtool = "source-map";
     }
     if (argv.as === "server") {
         config.target = "node";

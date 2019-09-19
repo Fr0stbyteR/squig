@@ -1,21 +1,64 @@
 import * as SocketIO from "socket.io-client";
 
-document.addEventListener("DOMContentLoaded", () => {
-    // Data init
-    const squig: Squig = {};
-    const w = 720;
-    const h = 1280;
-    squig.canvas = document.getElementById("main-canvas") as HTMLCanvasElement;
-    const colorSelects = document.getElementsByClassName("color-select") as HTMLCollectionOf<HTMLDivElement>;
-    squig.lines = {};
-    squig.tempLine = { user: "", color: "rgb(100, 0, 0)", points: [] };
-    squig.canvas.width = w;
-    squig.canvas.height = h;
-    squig.ctx = squig.canvas.getContext("2d");
-    squig.raf = 0;
-    window.squig = squig;
-
-    const drawLine = (ctx: CanvasRenderingContext2D, line: TLine) => {
+export class Squig {
+    w: number;
+    h: number;
+    socket: SocketIOClient.Socket;
+    canvas: HTMLCanvasElement;
+    ctx: CanvasRenderingContext2D;
+    lines: TLines;
+    tempLine: TLine;
+    raf: number;
+    img: HTMLImageElement;
+    constructor() {
+        this.w = 720;
+        this.h = 1280;
+        this.canvas = document.getElementById("main-canvas") as HTMLCanvasElement;
+        this.canvas.width = this.w;
+        this.canvas.height = this.h;
+        this.ctx = this.canvas.getContext("2d");
+        this.img = document.getElementById("background") as HTMLImageElement;
+        this.lines = {};
+        this.tempLine = { user: "", color: "rgb(100, 0, 0)", points: [] };
+        this.raf = 0;
+        this.socket = SocketIO(window.location.hostname + ":2112");
+        // bind
+        const colorSelects = document.getElementsByClassName("color-select") as HTMLCollectionOf<HTMLDivElement>;
+        for (let i = 0; i < colorSelects.length; i++) {
+            const e = colorSelects[i];
+            e.addEventListener("click", this.handleClickColor);
+            e.addEventListener("touchstart", this.handleClickColor);
+        }
+        this.canvas.addEventListener("mousedown", this.handleStart);
+        this.canvas.addEventListener("touchstart", this.handleStart);
+        this.initSocket();
+        this.redraw();
+    }
+    initSocket() {
+        const { socket } = this;
+        socket.on("connect", () => {
+            this.tempLine.user = this.socket.id;
+            socket.emit("connect-client");
+            socket.on("new-line", (e: { id: number; line: TLine }) => {
+                this.lines[e.id] = e.line;
+                this.redraw();
+            });
+            socket.on("new-img", (e: { path: string }) => {
+                this.img.src = e.path || "";
+            });
+            socket.on("delete-line", (e: { id: number; ids: number[] }) => {
+                if (e.id) delete this.lines[e.id];
+                if (e.ids) e.ids.forEach(id => delete this.lines[id]);
+                this.redraw();
+            });
+            socket.on("lines", (e: TLines) => {
+                this.lines = e;
+                this.redraw();
+            });
+        });
+    }
+    drawLine(line: TLine) {
+        const { ctx } = this;
         if (!line.points.length) return;
         ctx.save();
         ctx.strokeStyle = line.color;
@@ -29,83 +72,55 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         ctx.stroke();
         ctx.restore();
-    };
-    const draw = () => {
-        const ctx = squig.ctx;
-        const lines = squig.lines;
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, w, h);
+    }
+    redraw() {
+        const { ctx, lines, w, h } = this;
+        ctx.clearRect(0, 0, w, h);
         for (const id in lines) {
             const line = lines[id];
-            drawLine(ctx, line);
+            this.drawLine(line);
         }
-        drawLine(ctx, squig.tempLine);
-    };
-    draw();
-
-    // Socket init
-    squig.socket = SocketIO(window.location.hostname + ":2112");
-    squig.socket.on("connect", () => {
-        squig.tempLine.user = squig.socket.id;
-        squig.socket.emit("connect-client");
-        squig.socket.on("new-line", (e: { id: number; line: TLine }) => {
-            squig.lines[e.id] = e.line;
-            draw();
-        });
-        squig.socket.on("delete-line", (e: { id: number; ids: number[] }) => {
-            if (e.id) delete squig.lines[e.id];
-            if (e.ids) e.ids.forEach(id => delete squig.lines[id]);
-            draw();
-        });
-        squig.socket.on("lines", (e: TLines) => {
-            squig.lines = e;
-            draw();
-        });
-    });
-
-    const handleClickColor = (e: MouseEvent | TouchEvent) => {
-        const color = window.getComputedStyle(e.currentTarget as HTMLDivElement).getPropertyValue("background-color");
-        squig.tempLine.color = color;
-    };
-    for (let i = 0; i < colorSelects.length; i++) {
-        const e = colorSelects[i];
-        e.addEventListener("click", handleClickColor);
-        e.addEventListener("touchstart", handleClickColor);
+        this.drawLine(this.tempLine);
     }
-
-    const handleMove = (e: MouseEvent | TouchEvent) => {
-        e.preventDefault();
-        const rect = squig.canvas.getBoundingClientRect();
-        const x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
-        const y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
-        squig.tempLine.points.push({ x: x / rect.width * w, y: y / rect.height * h });
-        draw();
+    handleClickColor = (e: MouseEvent | TouchEvent) => {
+        const color = window.getComputedStyle(e.currentTarget as HTMLDivElement).getPropertyValue("background-color");
+        this.tempLine.color = color;
     };
-    const handleEnd = () => {
-        const id = new Date().getTime();
-        squig.lines[id] = squig.tempLine;
-        if (!squig.socket.disconnected) squig.socket.emit("new-line", { id, line: squig.tempLine });
-        squig.tempLine = { user: squig.socket.id, color: squig.tempLine.color, points: [] };
-        draw();
-        const canvas = squig.canvas;
-        canvas.removeEventListener("mousemove", handleMove);
-        canvas.removeEventListener("touchmove", handleMove);
-        canvas.removeEventListener("mouseup", handleEnd);
-        canvas.removeEventListener("touchend", handleEnd);
-    };
-    const handleStart = (e: MouseEvent | TouchEvent) => {
+    handleMove = (e: MouseEvent | TouchEvent) => {
         e.preventDefault();
-        const canvas = squig.canvas;
+        const { canvas, w, h } = this;
         const rect = canvas.getBoundingClientRect();
         const x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
         const y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
-        squig.tempLine.points = [{ x: x / rect.width * w, y: y / rect.height * h }];
-        draw();
-        canvas.addEventListener("mousemove", handleMove);
-        canvas.addEventListener("touchmove", handleMove);
-        canvas.addEventListener("mouseup", handleEnd);
-        canvas.addEventListener("touchend", handleEnd);
+        this.tempLine.points.push({ x: x / rect.width * w, y: y / rect.height * h });
+        this.redraw();
     };
-    squig.canvas.addEventListener("mousedown", handleStart);
-    squig.canvas.addEventListener("touchstart", handleStart);
+    handleEnd = () => {
+        const id = new Date().getTime();
+        this.lines[id] = this.tempLine;
+        if (!this.socket.disconnected) this.socket.emit("new-line", { id, line: this.tempLine });
+        this.tempLine = { user: this.socket.id, color: this.tempLine.color, points: [] };
+        this.redraw();
+        const canvas = this.canvas;
+        canvas.removeEventListener("mousemove", this.handleMove);
+        canvas.removeEventListener("touchmove", this.handleMove);
+        canvas.removeEventListener("mouseup", this.handleEnd);
+        canvas.removeEventListener("touchend", this.handleEnd);
+    };
+    handleStart = (e: MouseEvent | TouchEvent) => {
+        e.preventDefault();
+        const { canvas, w, h } = this;
+        const rect = canvas.getBoundingClientRect();
+        const x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
+        const y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
+        this.tempLine.points = [{ x: x / rect.width * w, y: y / rect.height * h }];
+        this.redraw();
+        canvas.addEventListener("mousemove", this.handleMove);
+        canvas.addEventListener("touchmove", this.handleMove);
+        canvas.addEventListener("mouseup", this.handleEnd);
+        canvas.addEventListener("touchend", this.handleEnd);
+    };
+}
+document.addEventListener("DOMContentLoaded", () => {
+    window.squig = new Squig();
 });

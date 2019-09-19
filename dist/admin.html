@@ -15,7 +15,10 @@
 </head>
 <body>
 	<div id="root">
-		<canvas id="main-canvas"></canvas>
+		<div id="main-canvas-container">
+			<canvas id="main-canvas"></canvas>
+			<img id="background" />
+		</div>
 		<div id="admin">
 			<div id="admin-time">
 				<table id="table-time">
@@ -43,6 +46,10 @@
 					<tbody>
 					</tbody>
 				</table>
+			</div>
+			<div id="admin-img">
+				<span>Backgrounds</span>
+				<div id="options-img"></div>
 			</div>
 		</div>
 		<div id="controller">

@@ -1,40 +1,18 @@
-import * as SocketIO from "socket.io-client";
+import { Squig } from "./index";
 
-document.addEventListener("DOMContentLoaded", () => {
-    // Data init
-    const squig: Squig = {};
-    const w = 720;
-    const h = 1280;
-    squig.canvas = document.getElementById("main-canvas") as HTMLCanvasElement;
-    const colorSelects = document.getElementsByClassName("color-select") as HTMLCollectionOf<HTMLDivElement>;
-    squig.lines = {};
-    squig.tempLine = { user: "", color: "rgb(100, 0, 0)", points: [] };
-    squig.canvas.width = w;
-    squig.canvas.height = h;
-    squig.ctx = squig.canvas.getContext("2d");
-    squig.raf = 0;
-    window.squig = squig;
-    const squigAdmin: SquigAdmin = {};
-    squigAdmin.tableTime = document.getElementById("table-time") as HTMLTableElement;
-    squigAdmin.tableUser = document.getElementById("table-user") as HTMLTableElement;
-    squigAdmin.selected = [];
-
-    const drawLine = (ctx: CanvasRenderingContext2D, line: TLine) => {
-        if (!line.points.length) return;
-        ctx.save();
-        ctx.strokeStyle = line.color;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        const firstPoint = line.points[0];
-        ctx.moveTo(firstPoint.x, firstPoint.y);
-        for (let i = 1; i < line.points.length; i++) {
-            const point = line.points[i];
-            ctx.lineTo(point.x, point.y);
-        }
-        ctx.stroke();
-        ctx.restore();
-    };
-    const drawSelectedLine = (ctx: CanvasRenderingContext2D, line: TLine) => {
+class SquigAdmin extends Squig {
+    tableTime: HTMLTableElement;
+    tableUser: HTMLTableElement;
+    selected: string[];
+    constructor() {
+        super();
+        this.tableTime = document.getElementById("table-time") as HTMLTableElement;
+        this.tableUser = document.getElementById("table-user") as HTMLTableElement;
+        this.selected = [];
+        setInterval(this.fillTable, 60000);
+    }
+    drawSelectedLine(line: TLine) {
+        const { ctx } = this;
         if (!line.points.length) return;
         ctx.save();
         ctx.strokeStyle = "rgba(255, 255, 100, 0.5)";
@@ -49,57 +27,93 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         ctx.stroke();
         ctx.restore();
-    };
-    const draw = () => {
-        const ctx = squig.ctx;
-        const lines = squig.lines;
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, w, h);
+    }
+    initSocket() {
+        const { socket } = this;
+        socket.on("connect", () => {
+            this.tempLine.user = this.socket.id;
+            socket.emit("connect-admin");
+            socket.on("imgs", (list: string[]) => {
+                const imgsDiv = document.getElementById("options-img");
+                imgsDiv.innerHTML = "";
+                const handleClick = (e: MouseEvent | TouchEvent) => {
+                    const path = (e.currentTarget as HTMLImageElement).src;
+                    socket.emit("new-img", { path });
+                };
+                list.forEach((path) => {
+                    const img = document.createElement("img");
+                    img.src = `img/${path}`;
+                    img.className = "option-img";
+                    imgsDiv.appendChild(img);
+                    img.addEventListener("click", handleClick);
+                    img.addEventListener("touchstart", handleClick);
+                });
+            });
+            socket.on("new-line", (e: { id: number; line: TLine }) => {
+                this.lines[e.id] = e.line;
+                this.redraw();
+                this.fillTable();
+            });
+            socket.on("delete-line", (e: { id: number; ids: number[] }) => {
+                if (e.id) delete this.lines[e.id];
+                if (e.ids) e.ids.forEach(id => delete this.lines[id]);
+                this.redraw();
+                this.fillTable();
+            });
+            socket.on("lines", (e: TLines) => {
+                this.lines = e;
+                this.redraw();
+                this.fillTable();
+            });
+        });
+    }
+    redraw() {
+        const { ctx, lines, w, h } = this;
+        ctx.clearRect(0, 0, w, h);
         for (const id in lines) {
             const line = lines[id];
-            if (squigAdmin.selected.indexOf(id) !== -1) drawSelectedLine(ctx, line);
-            drawLine(ctx, line);
+            if (this.selected.indexOf(id) !== -1) this.drawSelectedLine(line);
+            this.drawLine(line);
         }
-        drawLine(ctx, squig.tempLine);
-    };
-    draw();
-    const fillTable = () => {
+        this.drawLine(this.tempLine);
+    }
+    fillTable = () => {
         const curTime = new Date();
-        const tableTimeBody = squigAdmin.tableTime.getElementsByTagName("tbody")[0];
+        const tableTimeBody = this.tableTime.getElementsByTagName("tbody")[0];
         tableTimeBody.innerHTML = "";
-        const tableUserBody = squigAdmin.tableUser.getElementsByTagName("tbody")[0];
+        const tableUserBody = this.tableUser.getElementsByTagName("tbody")[0];
         tableUserBody.innerHTML = "";
         const users: { [id: string]: { last: number; lines: string[] } } = {};
         const handleSelect = (id: string) => {
-            if (squigAdmin.selected.indexOf(id) === -1) {
-                squigAdmin.selected.push(id);
-                draw();
+            if (this.selected.indexOf(id) === -1) {
+                this.selected.push(id);
+                this.redraw();
             }
         };
         const handleDeselect = (id: string) => {
-            const i = squigAdmin.selected.indexOf(id);
+            const i = this.selected.indexOf(id);
             if (i !== -1) {
-                squigAdmin.selected.splice(i, 1);
-                draw();
+                this.selected.splice(i, 1);
+                this.redraw();
             }
         };
         const handleSelects = (ids: string[]) => {
             ids.forEach((id) => {
-                if (squigAdmin.selected.indexOf(id) === -1) squigAdmin.selected.push(id);
+                if (this.selected.indexOf(id) === -1) this.selected.push(id);
             });
-            draw();
+            this.redraw();
         };
         const handleDeselects = (ids: string[]) => {
             ids.forEach((id) => {
-                const i = squigAdmin.selected.indexOf(id);
-                if (i !== -1) squigAdmin.selected.splice(i, 1);
+                const i = this.selected.indexOf(id);
+                if (i !== -1) this.selected.splice(i, 1);
             });
-            draw();
+            this.redraw();
         };
-        const ids = Object.keys(squig.lines).sort((a, b) => +b - +a);
+        const ids = Object.keys(this.lines).sort((a, b) => +b - +a);
         for (let i = 0; i < ids.length; i++) {
             const id = ids[i];
-            const line = squig.lines[+id];
+            const line = this.lines[+id];
             const time = new Date(+id);
             const dMin = (curTime.getTime() - time.getTime()) / 60000;
             const color = line.color;
@@ -124,7 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
             tr.appendChild(btnDel);
             tr.tabIndex = 1;
             tableTimeBody.appendChild(tr);
-            btnDel.addEventListener("click", () => squig.socket.emit("delete-line", { id }));
+            btnDel.addEventListener("click", () => this.socket.emit("delete-line", { id }));
             tr.addEventListener("focusin", () => handleSelect(id));
             tr.addEventListener("focusout", () => handleDeselect(id));
             tr.addEventListener("mouseenter", () => handleSelect(id));
@@ -146,81 +160,14 @@ document.addEventListener("DOMContentLoaded", () => {
             tr.appendChild(tdTime);
             tr.appendChild(btnDel);
             tableUserBody.appendChild(tr);
-            btnDel.addEventListener("click", () => squig.socket.emit("delete-line", { ids: users[id].lines }));
+            btnDel.addEventListener("click", () => this.socket.emit("delete-line", { ids: users[id].lines }));
             tr.addEventListener("focusin", () => handleSelects(users[id].lines));
             tr.addEventListener("focusout", () => handleDeselects(users[id].lines));
             tr.addEventListener("mouseenter", () => handleSelects(users[id].lines));
             tr.addEventListener("mouseleave", () => handleDeselects(users[id].lines));
         }
     };
-    setInterval(fillTable, 60000);
-
-    // Socket init
-    squig.socket = SocketIO(window.location.hostname + ":2112");
-    squig.socket.on("connect", () => {
-        squig.tempLine.user = squig.socket.id;
-        squig.socket.emit("connect-admin");
-        squig.socket.on("new-line", (e: { id: number; line: TLine }) => {
-            squig.lines[e.id] = e.line;
-            draw();
-            fillTable();
-        });
-        squig.socket.on("delete-line", (e: { id: number; ids: number[] }) => {
-            if (e.id) delete squig.lines[e.id];
-            if (e.ids) e.ids.forEach(id => delete squig.lines[id]);
-            draw();
-            fillTable();
-        });
-        squig.socket.on("lines", (e: TLines) => {
-            squig.lines = e;
-            draw();
-            fillTable();
-        });
-    });
-
-    const handleClickColor = (e: MouseEvent | TouchEvent) => {
-        const color = window.getComputedStyle(e.currentTarget as HTMLDivElement).getPropertyValue("background-color");
-        squig.tempLine.color = color;
-    };
-    for (let i = 0; i < colorSelects.length; i++) {
-        const e = colorSelects[i];
-        e.addEventListener("click", handleClickColor);
-        e.addEventListener("touchstart", handleClickColor);
-    }
-
-    const handleMove = (e: MouseEvent | TouchEvent) => {
-        e.preventDefault();
-        const rect = squig.canvas.getBoundingClientRect();
-        const x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
-        const y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
-        squig.tempLine.points.push({ x: x / rect.width * w, y: y / rect.height * h });
-        draw();
-    };
-    const handleEnd = () => {
-        const id = new Date().getTime();
-        squig.lines[id] = squig.tempLine;
-        if (!squig.socket.disconnected) squig.socket.emit("new-line", { id, line: squig.tempLine });
-        squig.tempLine = { user: squig.socket.id, color: squig.tempLine.color, points: [] };
-        draw();
-        const canvas = squig.canvas;
-        canvas.removeEventListener("mousemove", handleMove);
-        canvas.removeEventListener("touchmove", handleMove);
-        canvas.removeEventListener("mouseup", handleEnd);
-        canvas.removeEventListener("touchend", handleEnd);
-    };
-    const handleStart = (e: MouseEvent | TouchEvent) => {
-        e.preventDefault();
-        const canvas = squig.canvas;
-        const rect = canvas.getBoundingClientRect();
-        const x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
-        const y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
-        squig.tempLine.points = [{ x: x / rect.width * w, y: y / rect.height * h }];
-        draw();
-        canvas.addEventListener("mousemove", handleMove);
-        canvas.addEventListener("touchmove", handleMove);
-        canvas.addEventListener("mouseup", handleEnd);
-        canvas.addEventListener("touchend", handleEnd);
-    };
-    squig.canvas.addEventListener("mousedown", handleStart);
-    squig.canvas.addEventListener("touchstart", handleStart);
+}
+document.addEventListener("DOMContentLoaded", () => {
+    window.squig = new SquigAdmin();
 });

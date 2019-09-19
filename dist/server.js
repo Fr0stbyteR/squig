@@ -5,6 +5,7 @@ exports.__esModule = true;
 var path = require("path");
 var SocketIO = require("socket.io");
 var express = require("express");
+var fs = require("fs");
 console.log("It works");
 var PORT = 1080;
 var server = express();
@@ -12,19 +13,35 @@ var io = SocketIO(2112);
 var clients = {};
 var admins = {};
 var lines = {};
+var background;
 server.use("/", express.static(path.join(__dirname, "/")));
 server.listen(PORT, function () { return console.log("Server is running on http://localhost:" + PORT); });
+var imgs = fs.readdirSync("./img");
 io.on("connection", function (socket) {
     console.log(socket.id);
     socket.on("connect-client", function () {
         clients[socket.id] = socket;
+        socket.emit("imgs", imgs);
         socket.emit("lines", lines);
+        socket.emit("new-img", { path: background });
         console.log("New client: " + socket.id);
     });
     socket.on("connect-admin", function () {
         admins[socket.id] = socket;
+        socket.emit("imgs", imgs);
         socket.emit("lines", lines);
+        socket.emit("new-img", { path: background });
         console.log("New admin: " + socket.id);
+        socket.on("new-img", function (e) {
+            background = e.path;
+            for (var id in clients) {
+                clients[id].emit("new-img", e);
+            }
+            for (var id in admins) {
+                admins[id].emit("new-img", e);
+            }
+            console.log("New Img: " + e.path);
+        });
     });
     socket.on("disconnect", function () {
         console.log("Disconnected: " + socket.id);
