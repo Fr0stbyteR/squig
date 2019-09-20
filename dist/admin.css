@@ -1,6 +1,6 @@
 #admin {
     display: flex;
-    flex: 1 0 auto;
+    flex: 1 1 auto;
     flex-direction: column;
     min-width: 200px;
     font-size: 14px;
@@ -28,7 +28,7 @@
     flex: 1 1 auto;
 }
 #admin-img #options-img {
-    display: block;
+    display: inline-flex;
     position: relative;
     overflow-x: scroll;
     overflow-y: hidden;

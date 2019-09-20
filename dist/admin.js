@@ -10211,19 +10211,195 @@ module.exports = yeast;
 
 /***/ }),
 
-/***/ "./src/admin.ts":
+/***/ "./src/Squig.ts":
 /*!**********************!*\
-  !*** ./src/admin.ts ***!
+  !*** ./src/Squig.ts ***!
   \**********************/
-/*! no exports provided */
+/*! exports provided: Squig */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _index__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./index */ "./src/index.ts");
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Squig", function() { return Squig; });
+/* harmony import */ var socket_io_client__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! socket.io-client */ "./node_modules/socket.io-client/lib/index.js");
+/* harmony import */ var socket_io_client__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(socket_io_client__WEBPACK_IMPORTED_MODULE_0__);
 
+class Squig {
+  constructor() {
+    this.w = void 0;
+    this.h = void 0;
+    this.socket = void 0;
+    this.canvas = void 0;
+    this.ctx = void 0;
+    this.lines = void 0;
+    this.tempLine = void 0;
+    this.raf = void 0;
+    this.img = void 0;
 
-class SquigAdmin extends _index__WEBPACK_IMPORTED_MODULE_0__["Squig"] {
+    this.handleClickColor = e => {
+      var color = window.getComputedStyle(e.currentTarget).getPropertyValue("background-color");
+      this.tempLine.color = color;
+    };
+
+    this.handleMove = e => {
+      e.preventDefault();
+      var canvas = this.canvas,
+          w = this.w,
+          h = this.h;
+      var rect = canvas.getBoundingClientRect();
+      var x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
+      var y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
+      this.tempLine.points.push({
+        x: x / rect.width * w,
+        y: y / rect.height * h
+      });
+      this.redraw();
+    };
+
+    this.handleEnd = () => {
+      var id = new Date().getTime();
+      this.lines[id] = this.tempLine;
+      if (!this.socket.disconnected) this.socket.emit("new-line", {
+        id,
+        line: this.tempLine
+      });
+      this.tempLine = {
+        user: this.socket.id,
+        color: this.tempLine.color,
+        points: []
+      };
+      this.redraw();
+      var canvas = this.canvas;
+      canvas.removeEventListener("mousemove", this.handleMove);
+      canvas.removeEventListener("touchmove", this.handleMove);
+      canvas.removeEventListener("mouseup", this.handleEnd);
+      canvas.removeEventListener("touchend", this.handleEnd);
+    };
+
+    this.handleStart = e => {
+      e.preventDefault();
+      var canvas = this.canvas,
+          w = this.w,
+          h = this.h;
+      var rect = canvas.getBoundingClientRect();
+      var x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
+      var y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
+      this.tempLine.points = [{
+        x: x / rect.width * w,
+        y: y / rect.height * h
+      }];
+      this.redraw();
+      canvas.addEventListener("mousemove", this.handleMove);
+      canvas.addEventListener("touchmove", this.handleMove);
+      canvas.addEventListener("mouseup", this.handleEnd);
+      canvas.addEventListener("touchend", this.handleEnd);
+    };
+
+    this.w = 720;
+    this.h = 1280;
+    this.canvas = document.getElementById("main-canvas");
+    this.canvas.width = this.w;
+    this.canvas.height = this.h;
+    this.ctx = this.canvas.getContext("2d");
+    this.img = document.getElementById("background");
+    this.lines = {};
+    this.tempLine = {
+      user: "",
+      color: "rgb(100, 0, 0)",
+      points: []
+    };
+    this.raf = 0;
+    this.socket = socket_io_client__WEBPACK_IMPORTED_MODULE_0__(window.location.hostname + ":2112"); // bind
+
+    var colorSelects = document.getElementsByClassName("color-select");
+
+    for (var i = 0; i < colorSelects.length; i++) {
+      var e = colorSelects[i];
+      e.addEventListener("click", this.handleClickColor);
+      e.addEventListener("touchstart", this.handleClickColor);
+    }
+
+    this.canvas.addEventListener("mousedown", this.handleStart);
+    this.canvas.addEventListener("touchstart", this.handleStart);
+    this.initSocket();
+    this.redraw();
+  }
+
+  initSocket() {
+    var socket = this.socket;
+    socket.on("connect", () => {
+      this.tempLine.user = this.socket.id;
+      socket.emit("connect-client");
+      socket.on("new-line", e => {
+        this.lines[e.id] = e.line;
+        this.redraw();
+      });
+      socket.on("new-img", e => {
+        this.img.src = e.path || "";
+      });
+      socket.on("delete-line", e => {
+        if (e.id) delete this.lines[e.id];
+        if (e.ids) e.ids.forEach(id => delete this.lines[id]);
+        this.redraw();
+      });
+      socket.on("lines", e => {
+        this.lines = e;
+        this.redraw();
+      });
+    });
+  }
+
+  drawLine(line) {
+    var ctx = this.ctx;
+    if (!line.points.length) return;
+    ctx.save();
+    ctx.strokeStyle = line.color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    var firstPoint = line.points[0];
+    ctx.moveTo(firstPoint.x, firstPoint.y);
+
+    for (var i = 1; i < line.points.length; i++) {
+      var point = line.points[i];
+      ctx.lineTo(point.x, point.y);
+    }
+
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  redraw() {
+    var ctx = this.ctx,
+        lines = this.lines,
+        w = this.w,
+        h = this.h;
+    ctx.clearRect(0, 0, w, h);
+
+    for (var id in lines) {
+      var line = lines[id];
+      this.drawLine(line);
+    }
+
+    this.drawLine(this.tempLine);
+  }
+
+}
+
+/***/ }),
+
+/***/ "./src/SquigAdmin.ts":
+/*!***************************!*\
+  !*** ./src/SquigAdmin.ts ***!
+  \***************************/
+/*! exports provided: SquigAdmin */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "SquigAdmin", function() { return SquigAdmin; });
+/* harmony import */ var _Squig__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Squig */ "./src/Squig.ts");
+
+class SquigAdmin extends _Squig__WEBPACK_IMPORTED_MODULE_0__["Squig"] {
   constructor() {
     var _this;
 
@@ -10403,6 +10579,9 @@ class SquigAdmin extends _index__WEBPACK_IMPORTED_MODULE_0__["Squig"] {
         this.redraw();
         this.fillTable();
       });
+      socket.on("new-img", e => {
+        this.img.src = e.path || "";
+      });
       socket.on("delete-line", e => {
         if (e.id) delete this.lines[e.id];
         if (e.ids) e.ids.forEach(id => delete this.lines[id]);
@@ -10435,187 +10614,21 @@ class SquigAdmin extends _index__WEBPACK_IMPORTED_MODULE_0__["Squig"] {
 
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  window.squig = new SquigAdmin();
-});
-
 /***/ }),
 
-/***/ "./src/index.ts":
+/***/ "./src/admin.ts":
 /*!**********************!*\
-  !*** ./src/index.ts ***!
+  !*** ./src/admin.ts ***!
   \**********************/
-/*! exports provided: Squig */
+/*! no exports provided */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "Squig", function() { return Squig; });
-/* harmony import */ var socket_io_client__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! socket.io-client */ "./node_modules/socket.io-client/lib/index.js");
-/* harmony import */ var socket_io_client__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(socket_io_client__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _SquigAdmin__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./SquigAdmin */ "./src/SquigAdmin.ts");
 
-class Squig {
-  constructor() {
-    this.w = void 0;
-    this.h = void 0;
-    this.socket = void 0;
-    this.canvas = void 0;
-    this.ctx = void 0;
-    this.lines = void 0;
-    this.tempLine = void 0;
-    this.raf = void 0;
-    this.img = void 0;
-
-    this.handleClickColor = e => {
-      var color = window.getComputedStyle(e.currentTarget).getPropertyValue("background-color");
-      this.tempLine.color = color;
-    };
-
-    this.handleMove = e => {
-      e.preventDefault();
-      var canvas = this.canvas,
-          w = this.w,
-          h = this.h;
-      var rect = canvas.getBoundingClientRect();
-      var x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
-      var y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
-      this.tempLine.points.push({
-        x: x / rect.width * w,
-        y: y / rect.height * h
-      });
-      this.redraw();
-    };
-
-    this.handleEnd = () => {
-      var id = new Date().getTime();
-      this.lines[id] = this.tempLine;
-      if (!this.socket.disconnected) this.socket.emit("new-line", {
-        id,
-        line: this.tempLine
-      });
-      this.tempLine = {
-        user: this.socket.id,
-        color: this.tempLine.color,
-        points: []
-      };
-      this.redraw();
-      var canvas = this.canvas;
-      canvas.removeEventListener("mousemove", this.handleMove);
-      canvas.removeEventListener("touchmove", this.handleMove);
-      canvas.removeEventListener("mouseup", this.handleEnd);
-      canvas.removeEventListener("touchend", this.handleEnd);
-    };
-
-    this.handleStart = e => {
-      e.preventDefault();
-      var canvas = this.canvas,
-          w = this.w,
-          h = this.h;
-      var rect = canvas.getBoundingClientRect();
-      var x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
-      var y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
-      this.tempLine.points = [{
-        x: x / rect.width * w,
-        y: y / rect.height * h
-      }];
-      this.redraw();
-      canvas.addEventListener("mousemove", this.handleMove);
-      canvas.addEventListener("touchmove", this.handleMove);
-      canvas.addEventListener("mouseup", this.handleEnd);
-      canvas.addEventListener("touchend", this.handleEnd);
-    };
-
-    this.w = 720;
-    this.h = 1280;
-    this.canvas = document.getElementById("main-canvas");
-    this.canvas.width = this.w;
-    this.canvas.height = this.h;
-    this.ctx = this.canvas.getContext("2d");
-    this.img = document.getElementById("background");
-    this.lines = {};
-    this.tempLine = {
-      user: "",
-      color: "rgb(100, 0, 0)",
-      points: []
-    };
-    this.raf = 0;
-    this.socket = socket_io_client__WEBPACK_IMPORTED_MODULE_0__(window.location.hostname + ":2112"); // bind
-
-    var colorSelects = document.getElementsByClassName("color-select");
-
-    for (var i = 0; i < colorSelects.length; i++) {
-      var e = colorSelects[i];
-      e.addEventListener("click", this.handleClickColor);
-      e.addEventListener("touchstart", this.handleClickColor);
-    }
-
-    this.canvas.addEventListener("mousedown", this.handleStart);
-    this.canvas.addEventListener("touchstart", this.handleStart);
-    this.initSocket();
-    this.redraw();
-  }
-
-  initSocket() {
-    var socket = this.socket;
-    socket.on("connect", () => {
-      this.tempLine.user = this.socket.id;
-      socket.emit("connect-client");
-      socket.on("new-line", e => {
-        this.lines[e.id] = e.line;
-        this.redraw();
-      });
-      socket.on("new-img", e => {
-        this.img.src = e.path || "";
-      });
-      socket.on("delete-line", e => {
-        if (e.id) delete this.lines[e.id];
-        if (e.ids) e.ids.forEach(id => delete this.lines[id]);
-        this.redraw();
-      });
-      socket.on("lines", e => {
-        this.lines = e;
-        this.redraw();
-      });
-    });
-  }
-
-  drawLine(line) {
-    var ctx = this.ctx;
-    if (!line.points.length) return;
-    ctx.save();
-    ctx.strokeStyle = line.color;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    var firstPoint = line.points[0];
-    ctx.moveTo(firstPoint.x, firstPoint.y);
-
-    for (var i = 1; i < line.points.length; i++) {
-      var point = line.points[i];
-      ctx.lineTo(point.x, point.y);
-    }
-
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  redraw() {
-    var ctx = this.ctx,
-        lines = this.lines,
-        w = this.w,
-        h = this.h;
-    ctx.clearRect(0, 0, w, h);
-
-    for (var id in lines) {
-      var line = lines[id];
-      this.drawLine(line);
-    }
-
-    this.drawLine(this.tempLine);
-  }
-
-}
 document.addEventListener("DOMContentLoaded", () => {
-  window.squig = new Squig();
+  window.squig = new _SquigAdmin__WEBPACK_IMPORTED_MODULE_0__["SquigAdmin"]();
 });
 
 /***/ }),
