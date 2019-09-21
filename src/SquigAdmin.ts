@@ -14,7 +14,7 @@ export class SquigAdmin extends Squig {
         this.btnClearBackground = document.getElementById("btn-clear-background") as HTMLButtonElement;
         this.btnDeleteLines.addEventListener("click", () => this.socket.emit("delete-all-lines"));
         this.btnClearBackground.addEventListener("click", () => {
-            this.socket.emit("new-img", {})
+            this.socket.emit("new-img", {});
             this.socket.emit("ratio", 720 / 1280);
         });
         this.selected = [];
