@@ -10261,8 +10261,8 @@ class Squig {
           w = this.w,
           h = this.h;
       var rect = canvas.getBoundingClientRect();
-      var x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
-      var y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
+      var x = (e instanceof MouseEvent ? e.pageX : e.touches[0].pageX) - rect.left;
+      var y = (e instanceof MouseEvent ? e.pageY : e.touches[0].pageY) - rect.top;
       this.tempLine.points.push({
         x: x / rect.width * w,
         y: y / rect.height * h
@@ -10295,8 +10295,8 @@ class Squig {
           w = this.w,
           h = this.h;
       var rect = canvas.getBoundingClientRect();
-      var x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
-      var y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
+      var x = (e instanceof MouseEvent ? e.pageX : e.touches[0].pageX) - rect.left;
+      var y = (e instanceof MouseEvent ? e.pageY : e.touches[0].pageY) - rect.top;
       this.tempLine.points = [{
         x: x / rect.width * w,
         y: y / rect.height * h

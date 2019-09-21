@@ -13,7 +13,10 @@ export class SquigAdmin extends Squig {
         this.btnDeleteLines = document.getElementById("btn-delete-all") as HTMLButtonElement;
         this.btnClearBackground = document.getElementById("btn-clear-background") as HTMLButtonElement;
         this.btnDeleteLines.addEventListener("click", () => this.socket.emit("delete-all-lines"));
-        this.btnClearBackground.addEventListener("click", () => this.socket.emit("new-img", {}));
+        this.btnClearBackground.addEventListener("click", () => {
+            this.socket.emit("new-img", {})
+            this.socket.emit("ratio", 720 / 1280);
+        });
         this.selected = [];
         setInterval(this.fillTable, 60000);
     }
@@ -43,7 +46,10 @@ export class SquigAdmin extends Squig {
                 const imgsDiv = document.getElementById("options-img");
                 imgsDiv.innerHTML = "";
                 const handleClick = (e: MouseEvent | TouchEvent) => {
-                    const path = (e.currentTarget as HTMLImageElement).src;
+                    const img = (e.currentTarget as HTMLImageElement);
+                    const path = img.src;
+                    const ratio = img.width / img.height;
+                    socket.emit("ratio", ratio);
                     socket.emit("new-img", { path });
                     socket.emit("delete-all-lines");
                 };

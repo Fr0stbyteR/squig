@@ -116,8 +116,8 @@ export class Squig {
         e.preventDefault();
         const { canvas, w, h } = this;
         const rect = canvas.getBoundingClientRect();
-        const x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
-        const y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
+        const x = (e instanceof MouseEvent ? e.pageX : e.touches[0].pageX) - rect.left;
+        const y = (e instanceof MouseEvent ? e.pageY : e.touches[0].pageY) - rect.top;
         this.tempLine.points.push({ x: x / rect.width * w, y: y / rect.height * h });
         this.redraw();
     };
@@ -136,8 +136,8 @@ export class Squig {
         e.preventDefault();
         const { canvas, w, h } = this;
         const rect = canvas.getBoundingClientRect();
-        const x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
-        const y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
+        const x = (e instanceof MouseEvent ? e.pageX : e.touches[0].pageX) - rect.left;
+        const y = (e instanceof MouseEvent ? e.pageY : e.touches[0].pageY) - rect.top;
         this.tempLine.points = [{ x: x / rect.width * w, y: y / rect.height * h }];
         this.redraw();
         document.addEventListener("mousemove", this.handleMove);

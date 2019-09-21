@@ -88,5 +88,14 @@ io.on("connection", function (socket) {
         }
         console.log("Delete line: " + (e.id || e.ids.length + "lines"));
     });
-    socket.on("ratio", function (ratio) { return aspectRatio = ratio; });
+    socket.on("ratio", function (ratio) {
+        aspectRatio = ratio;
+        for (var id in clients) {
+            clients[id].emit("ratio", ratio);
+        }
+        for (var id in admins) {
+            admins[id].emit("ratio", ratio);
+        }
+        console.log("Ratio " + ratio);
+    });
 });

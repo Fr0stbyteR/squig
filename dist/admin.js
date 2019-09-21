@@ -10242,11 +10242,11 @@ class Squig {
       var windowRatio = window.innerWidth / window.innerHeight;
 
       if (ratio > windowRatio) {
-        this.canvasContainer.style.width = "".concat(window.innerWidth - 10, "px");
-        this.canvasContainer.style.height = "".concat((window.innerWidth - 10) / ratio, "px");
+        this.canvasContainer.style.width = "".concat(window.innerWidth, "px");
+        this.canvasContainer.style.height = "".concat(window.innerWidth / ratio, "px");
       } else {
-        this.canvasContainer.style.width = "".concat((window.innerHeight - 10) * ratio, "px");
-        this.canvasContainer.style.height = "".concat(window.innerHeight - 10, "px");
+        this.canvasContainer.style.width = "".concat(window.innerHeight * ratio, "px");
+        this.canvasContainer.style.height = "".concat(window.innerHeight, "px");
       }
     };
 
@@ -10557,7 +10557,10 @@ class SquigAdmin extends _Squig__WEBPACK_IMPORTED_MODULE_0__["Squig"] {
     this.btnDeleteLines = document.getElementById("btn-delete-all");
     this.btnClearBackground = document.getElementById("btn-clear-background");
     this.btnDeleteLines.addEventListener("click", () => this.socket.emit("delete-all-lines"));
-    this.btnClearBackground.addEventListener("click", () => this.socket.emit("new-img", {}));
+    this.btnClearBackground.addEventListener("click", () => {
+      this.socket.emit("new-img", {});
+      this.socket.emit("ratio", 720 / 1280);
+    });
     this.selected = [];
     setInterval(this.fillTable, 60000);
   }
@@ -10592,7 +10595,10 @@ class SquigAdmin extends _Squig__WEBPACK_IMPORTED_MODULE_0__["Squig"] {
         imgsDiv.innerHTML = "";
 
         var handleClick = e => {
-          var path = e.currentTarget.src;
+          var img = e.currentTarget;
+          var path = img.src;
+          var ratio = img.width / img.height;
+          socket.emit("ratio", ratio);
           socket.emit("new-img", {
             path
           });
