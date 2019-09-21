@@ -44,11 +44,18 @@ export class Squig {
                 this.redraw();
             });
             socket.on("new-img", (e: { path: string }) => {
-                this.img.src = e.path || "";
+                if (e.path) {
+                    this.img.src = e.path;
+                    this.img.style.visibility = "visible";
+                } else this.img.style.visibility = "hidden";
             });
             socket.on("delete-line", (e: { id: number; ids: number[] }) => {
                 if (e.id) delete this.lines[e.id];
                 if (e.ids) e.ids.forEach(id => delete this.lines[id]);
+                this.redraw();
+            });
+            socket.on("delete-all-lines", () => {
+                this.lines = {};
                 this.redraw();
             });
             socket.on("lines", (e: TLines) => {

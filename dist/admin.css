@@ -71,3 +71,11 @@
     content: "Delete";
     color: white;
 }
+#admin #btn-delete-all {
+    background-color: #ff8080;
+    color: white;
+}
+#admin #btn-clear-background {
+    background-color: #ff8080;
+    color: white;
+}

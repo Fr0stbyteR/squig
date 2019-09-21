@@ -10211,9 +10211,9 @@ module.exports = yeast;
 
 /***/ }),
 
-/***/ "./src/index.ts":
+/***/ "./src/Squig.ts":
 /*!**********************!*\
-  !*** ./src/index.ts ***!
+  !*** ./src/Squig.ts ***!
   \**********************/
 /*! exports provided: Squig */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
@@ -10335,11 +10335,18 @@ class Squig {
         this.redraw();
       });
       socket.on("new-img", e => {
-        this.img.src = e.path || "";
+        if (e.path) {
+          this.img.src = e.path;
+          this.img.style.visibility = "visible";
+        } else this.img.style.visibility = "hidden";
       });
       socket.on("delete-line", e => {
         if (e.id) delete this.lines[e.id];
         if (e.ids) e.ids.forEach(id => delete this.lines[id]);
+        this.redraw();
+      });
+      socket.on("delete-all-lines", () => {
+        this.lines = {};
         this.redraw();
       });
       socket.on("lines", e => {
@@ -10384,8 +10391,22 @@ class Squig {
   }
 
 }
+
+/***/ }),
+
+/***/ "./src/index.ts":
+/*!**********************!*\
+  !*** ./src/index.ts ***!
+  \**********************/
+/*! no exports provided */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _Squig__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Squig */ "./src/Squig.ts");
+
 document.addEventListener("DOMContentLoaded", () => {
-  window.squig = new Squig();
+  window.squig = new _Squig__WEBPACK_IMPORTED_MODULE_0__["Squig"]();
 });
 
 /***/ }),

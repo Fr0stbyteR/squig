@@ -10335,11 +10335,18 @@ class Squig {
         this.redraw();
       });
       socket.on("new-img", e => {
-        this.img.src = e.path || "";
+        if (e.path) {
+          this.img.src = e.path;
+          this.img.style.visibility = "visible";
+        } else this.img.style.visibility = "hidden";
       });
       socket.on("delete-line", e => {
         if (e.id) delete this.lines[e.id];
         if (e.ids) e.ids.forEach(id => delete this.lines[id]);
+        this.redraw();
+      });
+      socket.on("delete-all-lines", () => {
+        this.lines = {};
         this.redraw();
       });
       socket.on("lines", e => {
@@ -10408,6 +10415,8 @@ class SquigAdmin extends _Squig__WEBPACK_IMPORTED_MODULE_0__["Squig"] {
     this.tableTime = void 0;
     this.tableUser = void 0;
     this.selected = void 0;
+    this.btnDeleteLines = void 0;
+    this.btnClearBackground = void 0;
 
     this.fillTable = () => {
       var curTime = new Date();
@@ -10525,6 +10534,10 @@ class SquigAdmin extends _Squig__WEBPACK_IMPORTED_MODULE_0__["Squig"] {
 
     this.tableTime = document.getElementById("table-time");
     this.tableUser = document.getElementById("table-user");
+    this.btnDeleteLines = document.getElementById("btn-delete-all");
+    this.btnClearBackground = document.getElementById("btn-clear-background");
+    this.btnDeleteLines.addEventListener("click", () => this.socket.emit("delete-all-lines"));
+    this.btnClearBackground.addEventListener("click", () => this.socket.emit("new-img", {}));
     this.selected = [];
     setInterval(this.fillTable, 60000);
   }
@@ -10563,6 +10576,7 @@ class SquigAdmin extends _Squig__WEBPACK_IMPORTED_MODULE_0__["Squig"] {
           socket.emit("new-img", {
             path
           });
+          socket.emit("delete-all-lines");
         };
 
         list.forEach(path => {
@@ -10580,11 +10594,19 @@ class SquigAdmin extends _Squig__WEBPACK_IMPORTED_MODULE_0__["Squig"] {
         this.fillTable();
       });
       socket.on("new-img", e => {
-        this.img.src = e.path || "";
+        if (e.path) {
+          this.img.src = e.path;
+          this.img.style.visibility = "visible";
+        } else this.img.style.visibility = "hidden";
       });
       socket.on("delete-line", e => {
         if (e.id) delete this.lines[e.id];
         if (e.ids) e.ids.forEach(id => delete this.lines[id]);
+        this.redraw();
+        this.fillTable();
+      });
+      socket.on("delete-all-lines", () => {
+        this.lines = {};
         this.redraw();
         this.fillTable();
       });

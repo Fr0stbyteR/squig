@@ -13,7 +13,7 @@ const server = express();
 const io = SocketIO(2112);
 const clients: { [id: string]: SocketIO.Socket } = {};
 const admins: { [id: string]: SocketIO.Socket } = {};
-const lines: TLines = {};
+let lines: TLines = {};
 let background: string;
 
 server.use("/", express.static(path.join(__dirname, "/")));
@@ -61,6 +61,17 @@ io.on("connection", (socket) => {
         }
         console.log("New line: " + e.id);
     });
+    socket.on("delete-all-lines", () => {
+        if (!(socket.id in admins)) return;
+        lines = {};
+        for (const id in clients) {
+            clients[id].emit("delete-all-lines");
+        }
+        for (const id in admins) {
+            admins[id].emit("delete-all-lines");
+        }
+        console.log("Delete all lines");
+    });
     socket.on("delete-line", (e: { id?: number; ids?: number[] }) => {
         if (!(socket.id in admins)) return;
         if (e.id) delete lines[e.id];
@@ -71,6 +82,6 @@ io.on("connection", (socket) => {
         for (const id in admins) {
             admins[id].emit("delete-line", e);
         }
-        console.log("Delete line: " + e.id || (e.ids.length + "lines"));
+        console.log("Delete line: " + (e.id || e.ids.length + "lines"));
     });
 });

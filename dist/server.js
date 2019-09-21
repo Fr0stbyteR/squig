@@ -58,6 +58,18 @@ io.on("connection", function (socket) {
         }
         console.log("New line: " + e.id);
     });
+    socket.on("delete-all-lines", function () {
+        if (!(socket.id in admins))
+            return;
+        lines = {};
+        for (var id in clients) {
+            clients[id].emit("delete-all-lines");
+        }
+        for (var id in admins) {
+            admins[id].emit("delete-all-lines");
+        }
+        console.log("Delete all lines");
+    });
     socket.on("delete-line", function (e) {
         if (!(socket.id in admins))
             return;
@@ -71,6 +83,6 @@ io.on("connection", function (socket) {
         for (var id in admins) {
             admins[id].emit("delete-line", e);
         }
-        console.log("Delete line: " + e.id || (e.ids.length + "lines"));
+        console.log("Delete line: " + (e.id || e.ids.length + "lines"));
     });
 });

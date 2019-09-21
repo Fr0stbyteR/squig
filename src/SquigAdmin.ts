@@ -4,10 +4,16 @@ export class SquigAdmin extends Squig {
     tableTime: HTMLTableElement;
     tableUser: HTMLTableElement;
     selected: string[];
+    btnDeleteLines: HTMLButtonElement;
+    btnClearBackground: HTMLButtonElement;
     constructor() {
         super();
         this.tableTime = document.getElementById("table-time") as HTMLTableElement;
         this.tableUser = document.getElementById("table-user") as HTMLTableElement;
+        this.btnDeleteLines = document.getElementById("btn-delete-all") as HTMLButtonElement;
+        this.btnClearBackground = document.getElementById("btn-clear-background") as HTMLButtonElement;
+        this.btnDeleteLines.addEventListener("click", () => this.socket.emit("delete-all-lines"));
+        this.btnClearBackground.addEventListener("click", () => this.socket.emit("new-img", {}));
         this.selected = [];
         setInterval(this.fillTable, 60000);
     }
@@ -39,6 +45,7 @@ export class SquigAdmin extends Squig {
                 const handleClick = (e: MouseEvent | TouchEvent) => {
                     const path = (e.currentTarget as HTMLImageElement).src;
                     socket.emit("new-img", { path });
+                    socket.emit("delete-all-lines");
                 };
                 list.forEach((path) => {
                     const img = document.createElement("img");
@@ -55,11 +62,19 @@ export class SquigAdmin extends Squig {
                 this.fillTable();
             });
             socket.on("new-img", (e: { path: string }) => {
-                this.img.src = e.path || "";
+                if (e.path) {
+                    this.img.src = e.path;
+                    this.img.style.visibility = "visible";
+                } else this.img.style.visibility = "hidden";
             });
             socket.on("delete-line", (e: { id: number; ids: number[] }) => {
                 if (e.id) delete this.lines[e.id];
                 if (e.ids) e.ids.forEach(id => delete this.lines[id]);
+                this.redraw();
+                this.fillTable();
+            });
+            socket.on("delete-all-lines", () => {
+                this.lines = {};
                 this.redraw();
                 this.fillTable();
             });
