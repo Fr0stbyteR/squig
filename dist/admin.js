@@ -10242,11 +10242,11 @@ class Squig {
       var windowRatio = window.innerWidth / window.innerHeight;
 
       if (ratio > windowRatio) {
-        this.canvasContainer.style.width = "".concat(window.innerWidth, "px");
-        this.canvasContainer.style.height = "".concat(window.innerWidth / ratio, "px");
+        this.canvasContainer.style.width = "".concat(window.innerWidth - 10, "px");
+        this.canvasContainer.style.height = "".concat((window.innerWidth - 10) / ratio, "px");
       } else {
-        this.canvasContainer.style.width = "".concat(window.innerHeight * ratio, "px");
-        this.canvasContainer.style.height = "".concat(window.innerHeight, "px");
+        this.canvasContainer.style.width = "".concat((window.innerHeight - 10) * ratio, "px");
+        this.canvasContainer.style.height = "".concat(window.innerHeight - 10, "px");
       }
     };
 
@@ -10261,8 +10261,8 @@ class Squig {
           w = this.w,
           h = this.h;
       var rect = canvas.getBoundingClientRect();
-      var x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
-      var y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
+      var x = (e instanceof MouseEvent ? e.pageX : e.touches[0].pageX) - rect.left;
+      var y = (e instanceof MouseEvent ? e.pageY : e.touches[0].pageY) - rect.top;
       this.tempLine.points.push({
         x: x / rect.width * w,
         y: y / rect.height * h
@@ -10295,8 +10295,8 @@ class Squig {
           w = this.w,
           h = this.h;
       var rect = canvas.getBoundingClientRect();
-      var x = e instanceof MouseEvent ? e.pageX : e.touches[0].pageX;
-      var y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
+      var x = (e instanceof MouseEvent ? e.pageX : e.touches[0].pageX) - rect.left;
+      var y = (e instanceof MouseEvent ? e.pageY : e.touches[0].pageY) - rect.top;
       this.tempLine.points = [{
         x: x / rect.width * w,
         y: y / rect.height * h
