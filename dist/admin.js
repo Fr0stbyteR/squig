@@ -10228,13 +10228,27 @@ class Squig {
   constructor() {
     this.w = void 0;
     this.h = void 0;
+    this.ratio = void 0;
     this.socket = void 0;
+    this.canvasContainer = void 0;
     this.canvas = void 0;
     this.ctx = void 0;
     this.lines = void 0;
     this.tempLine = void 0;
     this.raf = void 0;
     this.img = void 0;
+
+    this.adjustSize = ratio => {
+      var windowRatio = window.innerWidth / window.innerHeight;
+
+      if (ratio > windowRatio) {
+        this.canvasContainer.style.width = "".concat(window.innerWidth - 10, "px");
+        this.canvasContainer.style.height = "".concat((window.innerWidth - 10) / ratio, "px");
+      } else {
+        this.canvasContainer.style.width = "".concat((window.innerHeight - 10) * ratio, "px");
+        this.canvasContainer.style.height = "".concat(window.innerHeight - 10, "px");
+      }
+    };
 
     this.handleClickColor = e => {
       var color = window.getComputedStyle(e.currentTarget).getPropertyValue("background-color");
@@ -10269,11 +10283,10 @@ class Squig {
         points: []
       };
       this.redraw();
-      var canvas = this.canvas;
-      canvas.removeEventListener("mousemove", this.handleMove);
-      canvas.removeEventListener("touchmove", this.handleMove);
-      canvas.removeEventListener("mouseup", this.handleEnd);
-      canvas.removeEventListener("touchend", this.handleEnd);
+      document.removeEventListener("mousemove", this.handleMove);
+      document.removeEventListener("touchmove", this.handleMove);
+      document.removeEventListener("mouseup", this.handleEnd);
+      document.removeEventListener("touchend", this.handleEnd);
     };
 
     this.handleStart = e => {
@@ -10289,15 +10302,17 @@ class Squig {
         y: y / rect.height * h
       }];
       this.redraw();
-      canvas.addEventListener("mousemove", this.handleMove);
-      canvas.addEventListener("touchmove", this.handleMove);
-      canvas.addEventListener("mouseup", this.handleEnd);
-      canvas.addEventListener("touchend", this.handleEnd);
+      document.addEventListener("mousemove", this.handleMove);
+      document.addEventListener("touchmove", this.handleMove);
+      document.addEventListener("mouseup", this.handleEnd);
+      document.addEventListener("touchend", this.handleEnd);
     };
 
     this.w = 720;
     this.h = 1280;
+    this.ratio = 720 / 1280;
     this.canvas = document.getElementById("main-canvas");
+    this.canvasContainer = document.getElementById("main-canvas-container");
     this.canvas.width = this.w;
     this.canvas.height = this.h;
     this.ctx = this.canvas.getContext("2d");
@@ -10323,6 +10338,7 @@ class Squig {
     this.canvas.addEventListener("touchstart", this.handleStart);
     this.initSocket();
     this.redraw();
+    window.addEventListener("resize", e => this.adjustSize(this.ratio));
   }
 
   initSocket() {
@@ -10352,6 +10368,10 @@ class Squig {
       socket.on("lines", e => {
         this.lines = e;
         this.redraw();
+      });
+      socket.on("ratio", ratio => {
+        this.ratio = ratio;
+        this.adjustSize(ratio);
       });
     });
   }
@@ -10614,6 +10634,10 @@ class SquigAdmin extends _Squig__WEBPACK_IMPORTED_MODULE_0__["Squig"] {
         this.lines = e;
         this.redraw();
         this.fillTable();
+      });
+      socket.on("ratio", ratio => {
+        this.ratio = ratio;
+        this.adjustSize(ratio);
       });
     });
   }

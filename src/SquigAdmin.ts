@@ -83,6 +83,10 @@ export class SquigAdmin extends Squig {
                 this.redraw();
                 this.fillTable();
             });
+            socket.on("ratio", (ratio: number) => {
+                this.ratio = ratio;
+                this.adjustSize(ratio);
+            });
         });
     }
     redraw() {

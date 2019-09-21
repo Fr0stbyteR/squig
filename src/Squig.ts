@@ -3,7 +3,9 @@ import * as SocketIO from "socket.io-client";
 export class Squig {
     w: number;
     h: number;
+    ratio: number;
     socket: SocketIOClient.Socket;
+    canvasContainer: HTMLDivElement;
     canvas: HTMLCanvasElement;
     ctx: CanvasRenderingContext2D;
     lines: TLines;
@@ -13,7 +15,9 @@ export class Squig {
     constructor() {
         this.w = 720;
         this.h = 1280;
+        this.ratio = 720 / 1280;
         this.canvas = document.getElementById("main-canvas") as HTMLCanvasElement;
+        this.canvasContainer = document.getElementById("main-canvas-container") as HTMLDivElement;
         this.canvas.width = this.w;
         this.canvas.height = this.h;
         this.ctx = this.canvas.getContext("2d");
@@ -33,6 +37,7 @@ export class Squig {
         this.canvas.addEventListener("touchstart", this.handleStart);
         this.initSocket();
         this.redraw();
+        window.addEventListener("resize", e => this.adjustSize(this.ratio));
     }
     initSocket() {
         const { socket } = this;
@@ -62,7 +67,21 @@ export class Squig {
                 this.lines = e;
                 this.redraw();
             });
+            socket.on("ratio", (ratio: number) => {
+                this.ratio = ratio;
+                this.adjustSize(ratio);
+            });
         });
+    }
+    adjustSize = (ratio: number) => {
+        const windowRatio = window.innerWidth / window.innerHeight;
+        if (ratio > windowRatio) {
+            this.canvasContainer.style.width = `${window.innerWidth - 10}px`;
+            this.canvasContainer.style.height = `${(window.innerWidth - 10) / ratio}px`;
+        } else {
+            this.canvasContainer.style.width = `${(window.innerHeight - 10) * ratio}px`;
+            this.canvasContainer.style.height = `${window.innerHeight - 10}px`;
+        }
     }
     drawLine(line: TLine) {
         const { ctx } = this;
@@ -108,11 +127,10 @@ export class Squig {
         if (!this.socket.disconnected) this.socket.emit("new-line", { id, line: this.tempLine });
         this.tempLine = { user: this.socket.id, color: this.tempLine.color, points: [] };
         this.redraw();
-        const canvas = this.canvas;
-        canvas.removeEventListener("mousemove", this.handleMove);
-        canvas.removeEventListener("touchmove", this.handleMove);
-        canvas.removeEventListener("mouseup", this.handleEnd);
-        canvas.removeEventListener("touchend", this.handleEnd);
+        document.removeEventListener("mousemove", this.handleMove);
+        document.removeEventListener("touchmove", this.handleMove);
+        document.removeEventListener("mouseup", this.handleEnd);
+        document.removeEventListener("touchend", this.handleEnd);
     };
     handleStart = (e: MouseEvent | TouchEvent) => {
         e.preventDefault();
@@ -122,9 +140,9 @@ export class Squig {
         const y = e instanceof MouseEvent ? e.pageY : e.touches[0].pageY;
         this.tempLine.points = [{ x: x / rect.width * w, y: y / rect.height * h }];
         this.redraw();
-        canvas.addEventListener("mousemove", this.handleMove);
-        canvas.addEventListener("touchmove", this.handleMove);
-        canvas.addEventListener("mouseup", this.handleEnd);
-        canvas.addEventListener("touchend", this.handleEnd);
+        document.addEventListener("mousemove", this.handleMove);
+        document.addEventListener("touchmove", this.handleMove);
+        document.addEventListener("mouseup", this.handleEnd);
+        document.addEventListener("touchend", this.handleEnd);
     };
 }

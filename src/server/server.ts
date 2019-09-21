@@ -15,6 +15,7 @@ const clients: { [id: string]: SocketIO.Socket } = {};
 const admins: { [id: string]: SocketIO.Socket } = {};
 let lines: TLines = {};
 let background: string;
+let aspectRatio = 720 / 1280;
 
 server.use("/", express.static(path.join(__dirname, "/")));
 server.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
@@ -27,6 +28,7 @@ io.on("connection", (socket) => {
         socket.emit("imgs", imgs);
         socket.emit("lines", lines);
         socket.emit("new-img", { path: background });
+        socket.emit("ratio", aspectRatio);
         console.log("New client: " + socket.id);
     });
     socket.on("connect-admin", () => {
@@ -34,6 +36,7 @@ io.on("connection", (socket) => {
         socket.emit("imgs", imgs);
         socket.emit("lines", lines);
         socket.emit("new-img", { path: background });
+        socket.emit("ratio", aspectRatio);
         console.log("New admin: " + socket.id);
         socket.on("new-img", (e: { path?: string }) => {
             background = e.path;
@@ -84,4 +87,5 @@ io.on("connection", (socket) => {
         }
         console.log("Delete line: " + (e.id || e.ids.length + "lines"));
     });
+    socket.on("ratio", (ratio: number) => aspectRatio = ratio);
 });
