@@ -7,10 +7,9 @@ The project is an interactive local-network canvas. There are three parts (role)
 
 To run the project, you need to start the server firstly. Make sure you have [NodeJS](https://nodejs.org/) installed.
 
-Open Terminal, use `cd` command to switch path to project folder, then execute
+Open Terminal, use `cd` command to switch path to the `dist` folder under the project folder, then execute
 ```
-npm install --only=prod
-node ./dist/server.js
+node server.js
 ```
 Now a web page server is running and listening to port 1080,
 
