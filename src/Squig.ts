@@ -23,7 +23,7 @@ export class Squig {
         this.ctx = this.canvas.getContext("2d");
         this.img = document.getElementById("background") as HTMLImageElement;
         this.lines = {};
-        this.tempLine = { user: "", color: "rgb(100, 0, 0)", points: [] };
+        this.tempLine = { user: "", color: "#ee2a7b", points: [] };
         this.raf = 0;
         this.socket = SocketIO(window.location.hostname + ":2112");
         // bind
@@ -37,7 +37,7 @@ export class Squig {
         this.canvas.addEventListener("touchstart", this.handleStart);
         this.initSocket();
         this.redraw();
-        window.addEventListener("resize", e => this.adjustSize(this.ratio));
+        window.addEventListener("resize", () => this.adjustSize(this.ratio));
     }
     initSocket() {
         const { socket } = this;
