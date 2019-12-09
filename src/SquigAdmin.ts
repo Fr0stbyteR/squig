@@ -15,7 +15,7 @@ export class SquigAdmin extends Squig {
         this.btnDeleteLines.addEventListener("click", () => this.socket.emit("delete-all-lines"));
         this.btnClearBackground.addEventListener("click", () => {
             this.socket.emit("new-img", {});
-            this.socket.emit("ratio", 720 / 1280);
+            this.socket.emit("dim", [720, 1280]);
         });
         this.selected = [];
         setInterval(this.fillTable, 60000);
@@ -37,6 +37,16 @@ export class SquigAdmin extends Squig {
         ctx.stroke();
         ctx.restore();
     }
+    drawSelectedText(text: TText) {
+        const { ctx } = this;
+        ctx.save();
+        ctx.fillStyle = "rgba(255, 255, 100, 0.5)";
+        ctx.font = "50px Calibri, sans-serif";
+        ctx.textBaseline = "top";
+        const tm = ctx.measureText(text.text);
+        ctx.fillRect(text.position.x, text.position.y, tm.width, 50);
+        ctx.restore();
+    }
     initSocket() {
         const { socket } = this;
         socket.on("connect", () => {
@@ -48,8 +58,9 @@ export class SquigAdmin extends Squig {
                 const handleClick = (e: MouseEvent | TouchEvent) => {
                     const img = (e.currentTarget as HTMLImageElement);
                     const path = img.src;
-                    const ratio = img.width / img.height;
-                    socket.emit("ratio", ratio);
+                    const dim = [720 * img.width / img.height, 720] as const;
+                    this.adjustSize(...dim);
+                    socket.emit("dim", dim);
                     socket.emit("new-img", { path });
                     socket.emit("delete-all-lines");
                 };
@@ -67,6 +78,11 @@ export class SquigAdmin extends Squig {
                 this.redraw();
                 this.fillTable();
             });
+            socket.on("new-text", (e: { id: number; text: TText }) => {
+                this.texts[e.id] = e.text;
+                this.redraw();
+                this.fillTable();
+            });
             socket.on("new-img", (e: { path: string }) => {
                 if (e.path) {
                     this.img.src = e.path;
@@ -74,34 +90,48 @@ export class SquigAdmin extends Squig {
                 } else this.img.style.visibility = "hidden";
             });
             socket.on("delete-line", (e: { id: number; ids: number[] }) => {
-                if (e.id) delete this.lines[e.id];
-                if (e.ids) e.ids.forEach(id => delete this.lines[id]);
+                if (e.id) {
+                    delete this.lines[e.id];
+                    delete this.texts[e.id];
+                }
+                if (e.ids) {
+                    e.ids.forEach((id) => {
+                        delete this.lines[id];
+                        delete this.texts[id];
+                    });
+                }
                 this.redraw();
                 this.fillTable();
             });
             socket.on("delete-all-lines", () => {
                 this.lines = {};
+                this.texts = {};
                 this.redraw();
                 this.fillTable();
             });
-            socket.on("lines", (e: TLines) => {
-                this.lines = e;
+            socket.on("all", (e: { lines: TLines; texts: TTexts }) => {
+                this.lines = e.lines;
+                this.texts = e.texts;
                 this.redraw();
                 this.fillTable();
             });
-            socket.on("ratio", (ratio: number) => {
-                this.ratio = ratio;
-                this.adjustSize(ratio);
+            socket.on("dim", (dim: [number, number]) => {
+                this.adjustSize(...dim);
             });
         });
     }
     redraw() {
-        const { ctx, lines, w, h } = this;
+        const { ctx, lines, texts, w, h } = this;
         ctx.clearRect(0, 0, w, h);
         for (const id in lines) {
             const line = lines[id];
             if (this.selected.indexOf(id) !== -1) this.drawSelectedLine(line);
             this.drawLine(line);
+        }
+        for (const id in texts) {
+            const text = texts[id];
+            if (this.selected.indexOf(id) !== -1) this.drawSelectedText(text);
+            this.drawText(text);
         }
         this.drawLine(this.tempLine);
     }
@@ -138,10 +168,10 @@ export class SquigAdmin extends Squig {
             });
             this.redraw();
         };
-        const ids = Object.keys(this.lines).sort((a, b) => +b - +a);
+        const ids = Object.keys(this.lines).concat(Object.keys(this.texts)).sort((a, b) => +b - +a);
         for (let i = 0; i < ids.length; i++) {
             const id = ids[i];
-            const line = this.lines[+id];
+            const line = this.lines[+id] || this.texts[+id];
             const time = new Date(+id);
             const dMin = (curTime.getTime() - time.getTime()) / 60000;
             const color = line.color;

@@ -14,8 +14,9 @@ const io = SocketIO(2112);
 const clients: { [id: string]: SocketIO.Socket } = {};
 const admins: { [id: string]: SocketIO.Socket } = {};
 let lines: TLines = {};
+let texts: TTexts = {};
 let background: string;
-let aspectRatio = 720 / 1280;
+let dim = [720, 1280];
 
 server.use("/", express.static(path.join(__dirname, "/")));
 server.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
@@ -26,17 +27,17 @@ io.on("connection", (socket) => {
     socket.on("connect-client", () => {
         clients[socket.id] = socket;
         socket.emit("imgs", imgs);
-        socket.emit("lines", lines);
+        socket.emit("dim", dim);
+        socket.emit("all", { lines, texts });
         socket.emit("new-img", { path: background });
-        socket.emit("ratio", aspectRatio);
         console.log("New client: " + socket.id);
     });
     socket.on("connect-admin", () => {
         admins[socket.id] = socket;
         socket.emit("imgs", imgs);
-        socket.emit("lines", lines);
+        socket.emit("dim", dim);
+        socket.emit("all", { lines, texts });
         socket.emit("new-img", { path: background });
-        socket.emit("ratio", aspectRatio);
         console.log("New admin: " + socket.id);
         socket.on("new-img", (e: { path?: string }) => {
             background = e.path;
@@ -64,9 +65,20 @@ io.on("connection", (socket) => {
         }
         console.log("New line: " + e.id);
     });
+    socket.on("new-text", (e: { id: number; text: TText }) => {
+        texts[e.id] = e.text;
+        for (const id in clients) {
+            clients[id].emit("new-text", e);
+        }
+        for (const id in admins) {
+            admins[id].emit("new-text", e);
+        }
+        console.log("New text: " + e.id + " " + e.text.text);
+    });
     socket.on("delete-all-lines", () => {
         if (!(socket.id in admins)) return;
         lines = {};
+        texts = {};
         for (const id in clients) {
             clients[id].emit("delete-all-lines");
         }
@@ -77,8 +89,16 @@ io.on("connection", (socket) => {
     });
     socket.on("delete-line", (e: { id?: number; ids?: number[] }) => {
         if (!(socket.id in admins)) return;
-        if (e.id) delete lines[e.id];
-        if (e.ids) e.ids.forEach(id => delete lines[id]);
+        if (e.id) {
+            delete lines[e.id];
+            delete texts[e.id];
+        }
+        if (e.ids) {
+            e.ids.forEach((id) => {
+                delete lines[id];
+                delete texts[id];
+            });
+        }
         for (const id in clients) {
             clients[id].emit("delete-line", e);
         }
@@ -87,14 +107,14 @@ io.on("connection", (socket) => {
         }
         console.log("Delete line: " + (e.id || e.ids.length + "lines"));
     });
-    socket.on("ratio", (ratio: number) => {
-        aspectRatio = ratio;
+    socket.on("dim", (dimIn: [number, number]) => {
+        dim = dimIn;
         for (const id in clients) {
-            clients[id].emit("ratio", ratio);
+            clients[id].emit("dim", dim);
         }
         for (const id in admins) {
-            admins[id].emit("ratio", ratio);
+            admins[id].emit("ratio", dim);
         }
-        console.log("Ratio " + ratio);
+        console.log("Dim: " + dim[0] + ", " + dim[1]);
     });
 });

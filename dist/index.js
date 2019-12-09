@@ -9727,44 +9727,63 @@ class Squig {
   constructor() {
     this.w = void 0;
     this.h = void 0;
-    this.ratio = void 0;
+    this.zoom = void 0;
     this.socket = void 0;
     this.canvasContainer = void 0;
     this.canvas = void 0;
     this.ctx = void 0;
     this.lines = void 0;
     this.tempLine = void 0;
+    this.texts = void 0;
+    this.tempText = void 0;
+    this.mode = void 0;
     this.raf = void 0;
     this.img = void 0;
 
-    this.adjustSize = ratio => {
+    this.adjustSize = (wIn, hIn) => {
       var windowRatio = window.innerWidth / window.innerHeight;
+      this.w = wIn;
+      this.h = hIn;
+      var ratio = this.w / this.h;
+      var w = 0;
+      var h = 0;
 
       if (ratio > windowRatio) {
-        this.canvasContainer.style.width = "".concat(window.innerWidth - 10, "px");
-        this.canvasContainer.style.height = "".concat((window.innerWidth - 10) / ratio, "px");
+        w = window.innerWidth - 10;
+        h = (window.innerWidth - 10) / ratio;
       } else {
-        this.canvasContainer.style.width = "".concat((window.innerHeight - 10) * ratio, "px");
-        this.canvasContainer.style.height = "".concat(window.innerHeight - 10, "px");
+        w = (window.innerHeight - 10) * ratio;
+        h = window.innerHeight - 10;
       }
+
+      this.canvasContainer.style.width = "".concat(w, "px");
+      this.canvasContainer.style.height = "".concat(h, "px");
+      this.canvas.width = this.w;
+      this.canvas.height = this.h;
+      this.zoom = w / wIn;
+      this.redraw();
     };
 
     this.handleClickColor = e => {
       var color = window.getComputedStyle(e.currentTarget).getPropertyValue("background-color");
       this.tempLine.color = color;
+      this.tempText.color = color;
+    };
+
+    this.handleClickMode = e => {
+      this.mode = this.mode === "line" ? "text" : "line";
+      e.currentTarget.className = this.mode === "text" ? "active" : "";
     };
 
     this.handleMove = e => {
       e.preventDefault();
-      var canvas = this.canvas,
-          w = this.w,
-          h = this.h;
+      var canvas = this.canvas;
       var rect = canvas.getBoundingClientRect();
       var x = (e instanceof MouseEvent ? e.pageX : e.touches[0].pageX) - rect.left;
       var y = (e instanceof MouseEvent ? e.pageY : e.touches[0].pageY) - rect.top;
       this.tempLine.points.push({
-        x: x / rect.width * w,
-        y: y / rect.height * h
+        x: x / this.zoom,
+        y: y / this.zoom
       });
       this.redraw();
     };
@@ -9790,37 +9809,78 @@ class Squig {
 
     this.handleStart = e => {
       e.preventDefault();
-      var canvas = this.canvas,
-          w = this.w,
-          h = this.h;
+      var canvas = this.canvas;
       var rect = canvas.getBoundingClientRect();
       var x = (e instanceof MouseEvent ? e.pageX : e.touches[0].pageX) - rect.left;
       var y = (e instanceof MouseEvent ? e.pageY : e.touches[0].pageY) - rect.top;
-      this.tempLine.points = [{
-        x: x / rect.width * w,
-        y: y / rect.height * h
-      }];
+      var canvasX = x / this.zoom;
+      var canvasY = y / this.zoom;
+
+      if (this.mode === "text") {
+        // eslint-disable-next-line no-alert
+        var text = window.prompt("Write Something...");
+
+        if (text) {
+          this.tempText.text = text;
+          this.tempText.position = {
+            x: canvasX,
+            y: canvasY
+          };
+          var id = new Date().getTime();
+          this.texts[id] = this.tempText;
+          if (!this.socket.disconnected) this.socket.emit("new-text", {
+            id,
+            text: this.tempText
+          });
+          this.tempText = {
+            text: "",
+            user: this.socket.id,
+            color: this.tempText.color,
+            position: {
+              x: canvasX,
+              y: canvasY
+            }
+          };
+        }
+      } else {
+        this.tempLine.points = [{
+          x: canvasX,
+          y: canvasY
+        }];
+        document.addEventListener("mousemove", this.handleMove);
+        document.addEventListener("touchmove", this.handleMove);
+        document.addEventListener("mouseup", this.handleEnd);
+        document.addEventListener("touchend", this.handleEnd);
+      }
+
       this.redraw();
-      document.addEventListener("mousemove", this.handleMove);
-      document.addEventListener("touchmove", this.handleMove);
-      document.addEventListener("mouseup", this.handleEnd);
-      document.addEventListener("touchend", this.handleEnd);
     };
 
     this.w = 720;
     this.h = 1280;
-    this.ratio = 720 / 1280;
+    this.zoom = 1;
     this.canvas = document.getElementById("main-canvas");
     this.canvasContainer = document.getElementById("main-canvas-container");
     this.canvas.width = this.w;
     this.canvas.height = this.h;
     this.ctx = this.canvas.getContext("2d");
+    this.mode = "line";
     this.img = document.getElementById("background");
     this.lines = {};
     this.tempLine = {
       user: "",
       color: "#ee2a7b",
       points: []
+    };
+    this.texts = {};
+    this.tempText = {
+      user: "",
+      color: "#ee2a7b",
+      text: "",
+      position: {
+        x: 0,
+        y: 0
+      }
     };
     this.raf = 0;
     this.socket = socket_io_client__WEBPACK_IMPORTED_MODULE_0__(window.location.hostname + ":2112"); // bind
@@ -9833,11 +9893,14 @@ class Squig {
       e.addEventListener("touchstart", this.handleClickColor);
     }
 
+    var modeSelect = document.getElementById("text-select");
+    modeSelect.addEventListener("mousedown", this.handleClickMode);
+    modeSelect.addEventListener("touchstart", this.handleClickMode);
     this.canvas.addEventListener("mousedown", this.handleStart);
     this.canvas.addEventListener("touchstart", this.handleStart);
     this.initSocket();
     this.redraw();
-    window.addEventListener("resize", () => this.adjustSize(this.ratio));
+    window.addEventListener("resize", () => this.adjustSize(this.w, this.h));
   }
 
   initSocket() {
@@ -9849,6 +9912,10 @@ class Squig {
         this.lines[e.id] = e.line;
         this.redraw();
       });
+      socket.on("new-text", e => {
+        this.texts[e.id] = e.text;
+        this.redraw();
+      });
       socket.on("new-img", e => {
         if (e.path) {
           this.img.src = e.path;
@@ -9856,21 +9923,32 @@ class Squig {
         } else this.img.style.visibility = "hidden";
       });
       socket.on("delete-line", e => {
-        if (e.id) delete this.lines[e.id];
-        if (e.ids) e.ids.forEach(id => delete this.lines[id]);
+        if (e.id) {
+          delete this.lines[e.id];
+          delete this.texts[e.id];
+        }
+
+        if (e.ids) {
+          e.ids.forEach(id => {
+            delete this.lines[id];
+            delete this.texts[id];
+          });
+        }
+
         this.redraw();
       });
       socket.on("delete-all-lines", () => {
         this.lines = {};
+        this.texts = {};
         this.redraw();
       });
-      socket.on("lines", e => {
-        this.lines = e;
+      socket.on("all", e => {
+        this.lines = e.lines;
+        this.texts = e.texts;
         this.redraw();
       });
-      socket.on("ratio", ratio => {
-        this.ratio = ratio;
-        this.adjustSize(ratio);
+      socket.on("dim", dim => {
+        this.adjustSize(...dim);
       });
     });
   }
@@ -9894,9 +9972,20 @@ class Squig {
     ctx.restore();
   }
 
+  drawText(text) {
+    var ctx = this.ctx;
+    ctx.save();
+    ctx.font = "50px Calibri, sans-serif";
+    ctx.textBaseline = "top";
+    ctx.fillStyle = text.color;
+    ctx.fillText(text.text, text.position.x, text.position.y);
+    ctx.restore();
+  }
+
   redraw() {
     var ctx = this.ctx,
         lines = this.lines,
+        texts = this.texts,
         w = this.w,
         h = this.h;
     ctx.clearRect(0, 0, w, h);
@@ -9906,7 +9995,13 @@ class Squig {
       this.drawLine(line);
     }
 
+    for (var _id in texts) {
+      var text = texts[_id];
+      this.drawText(text);
+    }
+
     this.drawLine(this.tempLine);
+    this.drawText(this.tempText);
   }
 
 }
