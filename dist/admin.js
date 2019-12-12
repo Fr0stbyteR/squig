@@ -9869,13 +9869,13 @@ class Squig {
     this.lines = {};
     this.tempLine = {
       user: "",
-      color: "#ee2a7b",
+      color: "#2b3990",
       points: []
     };
     this.texts = {};
     this.tempText = {
       user: "",
-      color: "#ee2a7b",
+      color: "#2b3990",
       text: "",
       position: {
         x: 0,

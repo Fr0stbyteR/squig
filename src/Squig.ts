@@ -27,9 +27,9 @@ export class Squig {
         this.mode = "line";
         this.img = document.getElementById("background") as HTMLImageElement;
         this.lines = {};
-        this.tempLine = { user: "", color: "#ee2a7b", points: [] };
+        this.tempLine = { user: "", color: "#2b3990", points: [] };
         this.texts = {};
-        this.tempText = { user: "", color: "#ee2a7b", text: "", position: { x: 0, y: 0 } };
+        this.tempText = { user: "", color: "#2b3990", text: "", position: { x: 0, y: 0 } };
         this.raf = 0;
         this.socket = SocketIO(window.location.hostname + ":2112");
         // bind
